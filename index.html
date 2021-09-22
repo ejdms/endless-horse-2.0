@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: sans-serif;
+      }
+      .wrapper {
+        position: absolute;
+        width: 100%;
+        max-width: 100%;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      header {
+        position: absolute;
+        top: 5vh;
+        left: 0;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+      }
+      header span {
+        text-align: center;
+        font-size: 24px;
+      }
+      img {
+        max-width: 100%;
+      }
+      .img-legs {
+        position: relative;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <span>
+        Welcome to realistic endless horse.<br />
+        Come get some
+      </span>
+    </header>
+    <div class="wrapper js-wrapper">
+      <img class="js-img-main" src="./top.png" />
+    </div>
+
+    <script>
+      ;(() => {
+        const HORSE_SOUND_TIMEOUT = 5000
+        const HORSE_SOUND_MIN_DISTANCE = 40000
+        const IS_SCROLLING_TIMEOUT = 100
+
+        const qs = (...args) => document.querySelector(...args)
+        const qsa = (...args) => document.querySelectorAll(...args)
+        const wrapper = qs('.js-wrapper')
+        const imgMain = qs('.js-img-main')
+
+        let windowHeight = window.innerHeight
+        let isScrolling = false
+        let scrollYLastCheck = 0
+        let scrollTimeoutId
+
+        function playHorseAudio() {
+          const existingAudios = qsa('.js-iframeAudio')
+          if (existingAudios?.length) {
+            existingAudios.forEach((element) => {
+              element.remove()
+            })
+          }
+          const iframe = document.createElement('iframe')
+          iframe.src = './horseSound.mp3'
+          iframe.allow = 'autoplay'
+          iframe.style.display = 'none'
+          iframe.classList.add('js-iframeAudio')
+          document.body.prepend(iframe)
+        }
+
+        function handleHorseAudioInterval() {
+          const { scrollY } = window
+          if (
+            isScrolling &&
+            Math.abs(scrollY - scrollYLastCheck) > HORSE_SOUND_MIN_DISTANCE
+          ) {
+            playHorseAudio()
+          }
+          scrollYLastCheck = scrollY
+        }
+
+        function positionWrapper() {
+          windowHeight = window.innerHeight
+          const imgHeight = imgMain.height
+          wrapper.style.top = windowHeight - imgHeight + 'px'
+        }
+
+        function handleWindowResize() {
+          const currentHeight = window.innerHeight
+          if (currentHeight !== windowHeight) {
+            windowHeight = currentHeight
+          }
+          positionWrapper()
+        }
+
+        function handleWindowScroll() {
+          const { scrollY } = window
+          windowHeight = window.innerHeight
+          const wrapperHeight = wrapper.clientHeight
+          const shouldAddLegs = windowHeight + scrollY > wrapperHeight
+          if (shouldAddLegs) {
+            appendLegs()
+          }
+
+          isScrolling = true
+          if (scrollTimeoutId) {
+            clearTimeout(scrollTimeoutId)
+          }
+          scrollTimeoutId = setTimeout(() => {
+            isScrolling = false
+          }, IS_SCROLLING_TIMEOUT)
+        }
+
+        function createLegs() {
+          const legsImg = document.createElement('img')
+          legsImg.src = './legs.png'
+          legsImg.classList.add('img-legs')
+          return legsImg
+        }
+
+        function appendLegs() {
+          const legs = createLegs()
+          wrapper.appendChild(legs)
+          wrapper.appendChild(legs)
+          wrapper.appendChild(legs)
+          wrapper.appendChild(legs)
+        }
+
+        imgMain.onload = () => {
+          positionWrapper()
+          appendLegs()
+          appendLegs()
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+          setInterval(handleHorseAudioInterval, HORSE_SOUND_TIMEOUT)
+
+          window.addEventListener('resize', handleWindowResize, {
+            capture: true,
+          })
+          window.addEventListener('scroll', handleWindowScroll, {
+            capture: true,
+          })
+
+          window.addEventListener('beforeunload', () => {
+            window.removeEventListener('resize', handleWindowResize, {
+              capture: true,
+            })
+            window.removeEventListener('scroll', handleWindowScroll, {
+              capture: true,
+            })
+            if (scrollTimeoutId) {
+              clearTimeout(scrollTimeoutId)
+            }
+          })
+        })
+      })()
+    </script>
+  </body>
+</html>
